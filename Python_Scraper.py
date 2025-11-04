@@ -2,7 +2,7 @@ import urllib.request
 import re
 import csv
 
-url = "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+url = "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"
 
 with urllib.request.urlopen(url) as response:
     html = response.read().decode("utf-8")
@@ -41,16 +41,32 @@ def extract_data(html,url):
 
     print(data)
 
-    with open("books_to_scrap.csv", "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=data.keys()) 
-        writer.writeheader()  
-        writer.writerow(data)
-
-
     return data
+#extract_data(html, url)
 
 
-extract_data(html, url)
+def explore_category(html):
+    books = re.findall(r'<h3><a href="(.*?)" title="', html)
+    book_url = ["https://books.toscrape.com/catalogue/" + link.replace('../', '') for link in books]
+    #print(book_url)
+
+    all_books = []
+
+    for book in book_url:
+        with urllib.request.urlopen(book) as response:
+            book_html = response.read().decode("utf-8")
+            data = extract_data(book_html, book)
+            all_books.append(data)
+
+    with open("books_to_scrape.csv", 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=all_books[0].keys())
+        writer.writeheader()
+        for book in all_books:
+            writer.writerow(book)
+            
+    return book_url
+
+explore_category(html)
 
 
-
+    
