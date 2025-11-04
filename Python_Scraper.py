@@ -41,6 +41,12 @@ def extract_data(html,url):
 
     print(data)
 
+    with open("books_to_scrap.csv", "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=data.keys()) 
+        writer.writeheader()  
+        writer.writerow(data)
+
+
     return data
 
 
