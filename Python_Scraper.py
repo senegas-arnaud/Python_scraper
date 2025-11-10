@@ -4,14 +4,9 @@ import csv
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
+BASE_URL = "https://books.toscrape.com/"
 
-url = "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
-
-with urllib.request.urlopen(url) as response:
-    html = response.read().decode("utf-8")
-
-
-def extract_data(html,url):
+def extract_data(html, url):
     data = {}
     data["product_page_url"] = url
 
@@ -37,49 +32,57 @@ def extract_data(html,url):
     data["review_rating"] = review_rating.group(1) if review_rating else None
 
     image_url = re.search(r'<div class="item active">\s*<img src="(.*?)"', html)
-    data["image_url"] = "https://books.toscrape.com/" + image_url.group(1).replace('../', '') if image_url else None
+    data["image_url"] = BASE_URL + image_url.group(1).replace('../', '') if image_url else None
 
     return data
-#extract_data(html, url)
 
-
-def explore_category(html):
+def explore_category(category_url):
     all_books = []
 
-    while html:
-        books = re.findall(r'<h3><a href="(.*?)" title="', html)
-        book_url = ["https://books.toscrape.com/catalogue/" + link.replace('../', '') for link in books]
-        #print(book_url)
+    while category_url:
+        with urllib.request.urlopen(category_url) as response:
+            html = response.read().decode("utf-8")
 
         category = re.search(r'<title>\s*(.*?)\s*\|\s*Books to Scrape - Sandbox\s*</title>', html)
-        category_name = category.group(1) if category else "Unknown"     
+        category_name = category.group(1) if category else "Unknown"
 
-        for book in book_url:
-            with urllib.request.urlopen(book) as response:
+        books = re.findall(r'<h3><a href="(.*?)" title="', html)
+        book_urls = [BASE_URL + "catalogue/" + link.replace('../', '') for link in books]
+
+        for book_url in book_urls:
+            with urllib.request.urlopen(book_url) as response:
                 book_html = response.read().decode("utf-8")
-                data = extract_data(book_html, book)
+                data = extract_data(book_html, book_url)
                 data["category"] = category_name
                 all_books.append(data)
 
         next_page = re.search(r'<li class="next"><a href="(.*?)">next</a></li>', html)
         if next_page:
-            url = "https://books.toscrape.com/catalogue/category/books/travel_2/" + next_page.group(1)
-            with urllib.request.urlopen(url) as response:
-                html = response.read().decode("utf-8")
+            category_base = category_url.rsplit('/', 1)[0] + "/"
+            category_url = category_base + next_page.group(1)
         else:
-            break
+            category_url = None
+
+    if all_books:
+        filename = f"{category_name.replace(' ', '_').lower()}.csv"
+        with open(filename, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.DictWriter(file, fieldnames=all_books[0].keys())
+            writer.writeheader()
+            for book in all_books:
+                writer.writerow(book)
+
+    print(f"Category '{category_name}' done with {len(all_books)} books.")
 
 
-    with open("books_to_scrape.csv", 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=all_books[0].keys())
-        writer.writeheader()
-        for book in all_books:
-            writer.writerow(book)
-            
-    print(data)
-    return book_url
+def main():
+    with urllib.request.urlopen(BASE_URL) as response:
+        html = response.read().decode("utf-8")
 
-explore_category(html)
+    categories = re.findall( r'<a href="(catalogue/category/books/[^"]+/index.html)">', html)
+    categories_urls = [BASE_URL + c for c in categories]
+
+    for category_url in categories_urls:
+        explore_category(category_url)
 
 
-    
+main()
