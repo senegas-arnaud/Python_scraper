@@ -1,6 +1,7 @@
 import urllib.request
 import re
 import csv
+import os
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -63,8 +64,10 @@ def explore_category(category_url):
         else:
             category_url = None
 
+    os.makedirs('.csv', exist_ok=True)
+
     if all_books:
-        filename = f"{category_name.replace(' ', '_').lower()}.csv"
+        filename = os.path.join(".csv", f"{category_name.replace(' ', '_').lower()}.csv")
         with open(filename, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=all_books[0].keys())
             writer.writeheader()
