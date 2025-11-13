@@ -3,9 +3,33 @@ import re
 import csv
 import os
 import sys
+import pandas as pd
 sys.stdout.reconfigure(encoding='utf-8')
 
+
 BASE_URL = "https://books.toscrape.com/"
+
+
+def clear_name(name):
+    return re.sub(r'[\\/:"*?<>|]+', "_", name)
+
+
+def download_image_url(image_url, photo_folder, image_name):
+
+    os.makedirs(photo_folder, exist_ok=True)
+    image_path = os.path.join(photo_folder, image_name)
+
+    try:
+        with urllib.request.urlopen(image_url) as response:
+            image_data = response.read()
+    except Exception as e:
+        print(f"Failed to download image {image_name}: {e}")
+        return
+    
+    with open(image_path, 'wb') as image_file:
+        image_file.write(image_data)   
+
+
 
 def extract_data(html, url):
     data = {}
@@ -57,6 +81,17 @@ def explore_category(category_url):
                 data["category"] = category_name
                 all_books.append(data)
 
+                if data["image_url"] and data["title"]:
+                    image_folder = os.path.join("photos", clear_name(category_name))
+                    os.makedirs(image_folder, exist_ok=True)
+                    image_name = f"{clear_name(data['title'])}.jpg"
+                    if len(image_name) > 50:
+                        image_name = image_name[:50] + "... " + ".jpg"
+                    download_image_url(data["image_url"], image_folder, image_name)
+                else:
+                    print(f"Skipping image for book '{data['title']}' (no image URL)")
+
+
         next_page = re.search(r'<li class="next"><a href="(.*?)">next</a></li>', html)
         if next_page:
             category_base = category_url.rsplit('/', 1)[0] + "/"
@@ -75,7 +110,7 @@ def explore_category(category_url):
                 writer.writerow(book)
 
     print(f"Category '{category_name}' done with {len(all_books)} books.")
-
+    
 
 def main():
     with urllib.request.urlopen(BASE_URL) as response:
