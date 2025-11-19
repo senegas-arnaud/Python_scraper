@@ -14,7 +14,7 @@ BASE_URL = "https://books.toscrape.com/"
 
 
 
-
+# Explore a category by navigating through its pages, extracting book data, downloading images, and saving data to a CSV file
 def explore_category(category_url):
     all_books = []
 
@@ -22,12 +22,16 @@ def explore_category(category_url):
         with urllib.request.urlopen(category_url) as response:
             html = response.read().decode("utf-8")
 
+        # Get category name
         category = re.search(r'<title>\s*(.*?)\s*\|\s*Books to Scrape - Sandbox\s*</title>', html)
         category_name = category.group(1) if category else "Unknown"
 
+        # Find all book URLs on the current page
         books = re.findall(r'<h3><a href="(.*?)" title="', html)
         book_urls = [BASE_URL + "catalogue/" + link.replace('../', '') for link in books]
 
+
+        # Extract data for each book
         for book_url in book_urls:
             with urllib.request.urlopen(book_url) as response:
                 book_html = response.read().decode("utf-8")
@@ -35,6 +39,7 @@ def explore_category(category_url):
                 data["category"] = category_name
                 all_books.append(data)
 
+                # Download book image
                 if data["image_url"] and data["title"]:
                     image_folder = os.path.join("photos", clear_name(category_name))
                     os.makedirs(image_folder, exist_ok=True)
@@ -45,7 +50,7 @@ def explore_category(category_url):
                 else:
                     print(f"Skipping image for book '{data['title']}' (no image URL)")
 
-
+        # Check for a next page
         next_page = re.search(r'<li class="next"><a href="(.*?)">next</a></li>', html)
         if next_page:
             category_base = category_url.rsplit('/', 1)[0] + "/"
@@ -55,6 +60,7 @@ def explore_category(category_url):
 
     os.makedirs('.csv', exist_ok=True)
 
+    # Save all book data to a CSV file
     if all_books:
         filename = os.path.join(".csv", f"{category_name.replace(' ', '_').lower()}.csv")
         with open(filename, mode='w', newline='', encoding='utf-8') as file:

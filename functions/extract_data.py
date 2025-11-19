@@ -6,9 +6,16 @@ sys.stdout.reconfigure(encoding='utf-8')
 BASE_URL = "https://books.toscrape.com/"
 
 
+# Extract book data from its HTML content
 def extract_data(html, url):
+
+    # Initialize data dictionary
     data = {}
     data["product_page_url"] = url
+
+
+    """ Extract various fields using regular expressions """
+    
 
     upc = re.search(r'<td>(.*?)</td>', html)
     data["universal_product_code"] = upc.group(1) if upc else None
@@ -16,13 +23,13 @@ def extract_data(html, url):
     title = re.search(r'<h1>(.*?)</h1>', html)
     data["title"] = title.group(1) if title else None
 
-    price_including_tax = re.search(r'<th>Price \(incl. tax\)</th>\s*<td>(.*?)</td>', html)
+    price_including_tax = re.search(r'<th>Price \(incl. tax\)</th>\s*<td>£(.*?)</td>', html)
     data["price_including_tax"] = price_including_tax.group(1) if price_including_tax else None
 
-    price_excluding_tax = re.search(r'<th>Price \(excl. tax\)</th>\s*<td>(.*?)</td>', html)
+    price_excluding_tax = re.search(r'<th>Price \(excl. tax\)</th>\s*<td>£(.*?)</td>', html)
     data["price_excluding_tax"] = price_excluding_tax.group(1) if price_excluding_tax else None
 
-    availability = re.search(r'<th>Availability</th>\s*<td>(.*?)</td>', html)
+    availability = re.search(r'<th>Availability</th>\s*<td>In stock \((.*?) available\)</td>', html)
     data["availability"] = availability.group(1) if availability else None
 
     product_description = re.search(r'<div id="product_description" class="sub-header">\s*<h2>Product Description</h2>\s*</div>\s*<p>(.*?)</p>', html)
