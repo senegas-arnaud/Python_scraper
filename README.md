@@ -16,10 +16,14 @@ Avant d'exécuter le script, assurez-vous d'avoir :
 - Recréer l'environnement virtuel 
 - Activer l'environnement virtuel 
 - Installer les dépendances : `pip install -r requirements.txt`
+- Dans la fonction explore_website, la ligne 20 limite volontairement le scraper aux trois premières catégories :
+    - Supprimez cette ligne pour permettre l’exploration de l’ensemble du site.
+    - Vous pouvez également modifier le chiffre dans les crochets pour ajuster le nombre de catégories à scraper.
 - Exécuter le code : `python main.py`
 
 
 ## Résultat
 
-- Extraction des données en CSV triées par catégorie
-- Téléchargement des couvertures des livres triées par catégorie
+- Les données extraites seront stockées dans un fichier CSV à la racine du projet, contenant un fichier CSV pour chaque catégorie.
+- Un dossier photos sera créé à la racine du projet, contenant un sous-dossier avec les couvertures des livres pour chaque catégorie.
+
